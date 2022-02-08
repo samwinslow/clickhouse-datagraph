@@ -1,0 +1,44 @@
+#!/bin/fish
+clickhouse-client --query "CREATE DATABASE IF NOT EXISTS aviation"
+
+#Event Id,Investigation Type,Accident Number,Event Date,Location,Country,Latitude,Longitude,Airport Code,Airport Name,Injury Severity,Aircraft Damage,Aircraft Category,Registration Number,Make,Model,Amateur Built,Number of Engines,Engine Type,FAR Description,Schedule,Purpose of Flight,Air Carrier,Total Fatal Injuries,Total Serious Injuries,Total Minor Injuries,Total Uninjured,Weather Condition,Broad Phase of Flight,Report Publication Date,
+
+clickhouse-client --query "
+CREATE TABLE aviation.airline_accidents
+(
+  `EventId` String,
+  `InvestigationType` String,
+  `AccidentNumber` String,
+  `EventDate` Date,
+  `Location` String,
+  `Country` String,
+  `Latitude` Float64,
+  `Longitude` Float64,
+  `AirportCode` String,
+  `AirportName` String,
+  `InjurySeverity` String,
+  `AircraftDamage` String,
+  `AircraftCategory` String,
+  `RegistrationNumber` String,
+  `Make` String,
+  `Model` String,
+  `AmateurBuilt` Boolean,
+  `NumberofEngines` UInt8,
+  `EngineType` String,
+  `FARDescription` String,
+  `Schedule` String,
+  `PurposeofFlight` String,
+  `AirCarrier` String,
+  `TotalFatalInjuries` UInt16,
+  `TotalSeriousInjuries` UInt16,
+  `TotalMinorInjuries` UInt16,
+  `TotalUninjured` UInt16,
+  `WeatherCondition` String,
+  `BroadPhaseofFlight` String,
+  `ReportPublicationDate` Date
+)
+ENGINE = MergeTree()
+PARTITION BY toYYYYMM(EventDate)
+ORDER BY (EventDate, sipHash64(EventId))
+SAMPLE BY sipHash64(EventId)
+"
