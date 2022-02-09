@@ -15,7 +15,7 @@ def is_unnamed_col(col_name):
   unnamed_re = r'Unnamed:\s\d+'
   return (col_name is None or col_name == '' or re.match(unnamed_re, col_name))
 
-def read_dataset(dataset, ignore_unnamed_cols=True):
+def read_dataset(dataset, date_columns, ignore_unnamed_cols=True):
   encoding = get_encoding(dataset)
   print(f"Reading dataset '{dataset}' with encoding '{encoding}'")
   
@@ -24,5 +24,5 @@ def read_dataset(dataset, ignore_unnamed_cols=True):
     cols = list(pandas.read_csv(dataset, encoding=encoding, nrows=1))
     usecols = [c for c in cols if not is_unnamed_col(c)]
 
-  df = pandas.read_csv(dataset, encoding=encoding, usecols=usecols)
+  df = pandas.read_csv(dataset, encoding=encoding, usecols=usecols, parse_dates=date_columns)
   return df
