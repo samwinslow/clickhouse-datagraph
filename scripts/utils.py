@@ -11,6 +11,7 @@ def get_encoding(dataset, default_encoding='latin1', num_bytes=100000):
   return encoding
 
 def is_unnamed_col(col_name):
+  col_name = col_name.strip()
   unnamed_re = r'Unnamed:\s\d+'
   return (col_name is None or col_name == '' or re.match(unnamed_re, col_name))
 
