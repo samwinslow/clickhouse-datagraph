@@ -1,5 +1,6 @@
 from utils import read_dataset
 
+
 base_dir = 'datasets/aviation'
 
 datasets_with_date_cols = [
@@ -9,9 +10,15 @@ datasets_with_date_cols = [
   ('world_aircraft_accident_summary.csv', ['Local Event Date'])
 ]
 
+
+def column_name_transform(col):
+  return col.replace(' ', '')
+
+
 for [dataset, date_columns] in datasets_with_date_cols:
   source_path = '/'.join([base_dir, dataset])
   df = read_dataset(source_path, date_columns)
 
   output_path = '/'.join([base_dir, 'cleaned', dataset])
-  df.to_csv(output_path, index=False)
+  output_df = df.rename(columns=column_name_transform)
+  output_df.to_csv(output_path, index=False)

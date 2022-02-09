@@ -1,4 +1,4 @@
-WAAS Subset Event Id,Local Event Date,Aircraft,Aircraft Operator,Event Location,Crew Fatalities,Crew Injured,Crew Aboard,PAX Fatalities,PAX Injuries,PAX Aboard
+WAASSubsetEventId,LocalEventDate,Aircraft,AircraftOperator,EventLocation,CrewFatalities,CrewInjured,CrewAboard,PAXFatalities,PAXInjuries,PAXAboard
 J1990003,1990-01-25,BOEING 707-320B,AVIANCA,"COVE NECK,  LONG ISLAND,  NEW YORK, US",8,1,9,65,80,149
 J1990004,1990-02-14,AIRBUS A320-230,INDIAN AIRLINES,"HINDUSTAN AP.,  BANGALORE, IN",4,1,7,88,21,139
 J1990014,1990-05-11,BOEING 737-300,PHILIPPINE AIRLINES,"NINOY AQUINO INTL. AP.,  MANILA, PH",0,0,6,8,0,113
