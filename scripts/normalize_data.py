@@ -1,5 +1,7 @@
 import re
-# from utils import read_dataset
+
+import pandas
+from utils import read_dataset
 
 
 base_dir = 'datasets/aviation'
@@ -9,6 +11,8 @@ state_abbreviations = ['AL', 'AK', 'AZ', 'AR', 'CA', 'CO', 'CT', 'DE', 'FL', 'GA
 
 
 def get_city(location=''):
+  if (type(location) != str):
+    return None
   match = re.match(city_regex, location)
   if match:
     return match.groups()[0]
@@ -17,24 +21,30 @@ def get_city(location=''):
 
 
 def get_state(location=''):
-  state = location[-2:].upper()
-  return state if state in state_abbreviations else None
+  if (type(location) == str):
+    state = location[-2:].upper()
+    if state in state_abbreviations:
+      return state
+  return None
 
 
-# Standard columns (left) are mapped from source columns (right)
-# You can also pass a lambda that optionally takes a row argument and returns a value.
+# Output columns (keys) are mapped from source columns (values).
+#
+# 'SourceColumn' == { 'col': 'SourceColumn' }
+# Optionally, pass a transform function that will be applied to each element in `col`
+# You can also pass a `literal` value that will be inserted down the whole column
 
 dataset_property_mappings = {
-  'airline_accidents.csv' : {
+  'airline_accidents.csv': {
     'EventId':                    'EventId',
     'EventDate':                  'EventDate',
     'EventType':                  'InvestigationType',
-    'SourceDataset':              lambda: 'airline_accidents',
+    'SourceDataset':              { 'literal': 'airline_accidents' },
     'AgencyReportNumber':         'AccidentNumber',
-    'AgencyReportType':           lambda: 'NTSB',
+    'AgencyReportType':           { 'literal': 'NTSB' },
     'AgencyReportDate':           'ReportPublicationDate',
-    'City':                       lambda row: get_city(row['Location']),
-    'StateCode':                  lambda row: get_state(row['Location']),
+    'City':                       { 'col': 'Location', 'transform': get_city },
+    'StateCode':                  { 'col': 'Location', 'transform': get_state },
     'Country':                    'Country',
     'Latitude':                   'Latitude',
     'Longitude':                  'Longitude',
@@ -48,32 +58,56 @@ dataset_property_mappings = {
     'AircraftDamageSeverity':     'AircraftDamage',
     'AircraftMake':               'Make',
     'AircraftModel':              'Model',
-    'AircraftSeries':             lambda: None,
+    'AircraftSeries':             { 'literal': None },
     'AircraftAmateurBuilt':       'AmateurBuilt',
     'AircraftOperator':           'AirCarrier',
-    'AircraftEngineMake':         lambda: None,
-    'AircraftEngineModel':        lambda: None,
-    'AircraftEngineGroupCode':    lambda: None,
-    'AircraftEngineType':         'AircraftEngineType',
+    'AircraftEngineMake':         { 'literal': None },
+    'AircraftEngineModel':        { 'literal': None },
+    'AircraftEngineGroupCode':    { 'literal': None },
+    'AircraftEngineType':         'EngineType',
     'AircraftEngineCount':        'NumberofEngines',
     'AircraftRegistrationNumber': 'RegistrationNumber',
-    'AircraftSerialNumber':       lambda: None,
+    'AircraftSerialNumber':       { 'literal': None },
     'FlightType':                 'PurposeofFlight',
-    'FlightConductCode':          lambda: None,
+    'FlightConductCode':          { 'literal': None },
     'FlightPlanFiledCode':        'Schedule',
     'FlightPhase':                'BroadPhaseofFlight',
     'FlightWeatherCondition':     'WeatherCondition',
-    'PilotCertificateType':       lambda: None,
-    'PilotFlightTimeTotal':       lambda: None,
-    'PilotFlightTimeInType':      lambda: None,
+    'PilotCertificateType':       { 'literal': None },
+    'PilotFlightTimeTotal':       { 'literal': None },
+    'PilotFlightTimeInType':      { 'literal': None },
   },
-  'faa_incidents_data.csv': {
-    # TODO
-  },
-  'ntsb_aviation_data.csv': {
-    # TODO
-  },
-  'world_aircraft_accident_summary.csv': {
-    # TODO
-  }
+  # 'faa_incidents_data.csv': {
+  #   # TODO
+  # },
+  # 'ntsb_aviation_data.csv': {
+  #   # TODO
+  # },
+  # 'world_aircraft_accident_summary.csv': {
+  #   # TODO
+  # }
 }
+
+
+for filename in dataset_property_mappings:
+  source_mapping = dataset_property_mappings[filename]
+  source_path = '/'.join([base_dir, 'cleaned', filename])
+  source_df = read_dataset(source_path)
+
+  output_path = '/'.join([base_dir, 'normalized', filename])
+  output_df = pandas.DataFrame()
+
+  for col in source_mapping:
+    input_source = source_mapping[col]
+    if type(input_source) == str:
+      output_df[col] = source_df[input_source]
+    elif 'literal' in input_source:
+      output_df[col] = input_source['literal']
+    elif 'col' in input_source:
+      input_col = source_df[input_source['col']]
+      input_col_transformed = input_col
+      if 'transform' in input_source and callable(input_source['transform']):
+        input_col_transformed = input_col.apply(input_source['transform'])
+      output_df[col] = input_col_transformed
+
+  output_df.to_csv(output_path, index=False)
