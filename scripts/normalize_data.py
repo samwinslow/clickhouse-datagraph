@@ -167,9 +167,48 @@ dataset_property_mappings = {
     'PilotFlightTimeTotal':       { 'literal': None },
     'PilotFlightTimeInType':      { 'literal': None },
   },
-  # 'world_aircraft_accident_summary.csv': {
-  #   # TODO
-  # }
+  'world_aircraft_accident_summary.csv': {
+    'EventId':                    'WAASSubsetEventId',
+    'EventDate':                  'LocalEventDate',
+    'EventType':                  { 'literal': None },
+    'SourceDataset':              { 'literal': 'WAAS' },
+    'AgencyReportNumber':         { 'literal': None },
+    'AgencyReportType':           { 'literal': 'WAAS' },
+    'AgencyReportDate':           { 'literal': None },
+    'City':                       { 'literal': None },
+    'StateCode':                  None, #TODO
+    'Country':                    None, #TODO
+    'Latitude':                   { 'literal': None },
+    'Longitude':                  { 'literal': None },
+    'AirportCode':                { 'literal': None },
+    'AirportName':                None, #TODO
+    'InjurySeverity':             { 'literal': None },
+    'InjuryFatalCount':           None, #TODO
+    'InjurySeriousCount':         None, #TODO
+    'InjuryMinorCount':           { 'literal': None },
+    'InjuryUninjuredCount':       None, #TODO
+    'AircraftDamageSeverity':     { 'literal': None },
+    'AircraftMake':               None, #TODO
+    'AircraftModel':              None, #TODO
+    'AircraftSeries':             None, #TODO
+    'AircraftAmateurBuilt':       { 'literal': None },
+    'AircraftOperator':           'AircraftOperator',
+    'AircraftEngineMake':         { 'literal': None },
+    'AircraftEngineModel':        { 'literal': None },
+    'AircraftEngineGroupCode':    { 'literal': None },
+    'AircraftEngineType':         { 'literal': None },
+    'AircraftEngineCount':        { 'literal': None },
+    'AircraftRegistrationNumber': { 'literal': None },
+    'AircraftSerialNumber':       { 'literal': None },
+    'FlightType':                 { 'literal': None },
+    'FlightConductCode':          { 'literal': None },
+    'FlightPlanFiledCode':        { 'literal': None },
+    'FlightPhase':                { 'literal': None },
+    'FlightWeatherCondition':     { 'literal': None },
+    'PilotCertificateType':       { 'literal': None },
+    'PilotFlightTimeTotal':       { 'literal': None },
+    'PilotFlightTimeInType':      { 'literal': None },
+  }
 }
 
 
