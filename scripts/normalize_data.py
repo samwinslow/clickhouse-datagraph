@@ -1,4 +1,5 @@
 import re
+import numpy
 
 import pandas
 from utils import read_dataset
@@ -28,6 +29,11 @@ def get_state(location=''):
   return None
 
 
+def fix_int(floating_int):
+  value = numpy.nan_to_num(floating_int)
+  return int(value)
+
+
 # Output columns (keys) are mapped from source columns (values).
 #
 # 'SourceColumn' == { 'col': 'SourceColumn' }
@@ -51,10 +57,10 @@ dataset_property_mappings = {
     'AirportCode':                'AirportCode',
     'AirportName':                'AirportName',
     'InjurySeverity':             'InjurySeverity',
-    'InjuryFatalCount':           'TotalFatalInjuries',
-    'InjurySeriousCount':         'TotalSeriousInjuries',
-    'InjuryMinorCount':           'TotalMinorInjuries',
-    'InjuryUninjuredCount':       'TotalUninjured',
+    'InjuryFatalCount':           { 'col': 'TotalFatalInjuries', 'transform': fix_int },
+    'InjurySeriousCount':         { 'col': 'TotalSeriousInjuries', 'transform': fix_int },
+    'InjuryMinorCount':           { 'col': 'TotalMinorInjuries', 'transform': fix_int },
+    'InjuryUninjuredCount':       { 'col': 'TotalUninjured', 'transform': fix_int },
     'AircraftDamageSeverity':     'AircraftDamage',
     'AircraftMake':               'Make',
     'AircraftModel':              'Model',
@@ -65,7 +71,7 @@ dataset_property_mappings = {
     'AircraftEngineModel':        { 'literal': None },
     'AircraftEngineGroupCode':    { 'literal': None },
     'AircraftEngineType':         'EngineType',
-    'AircraftEngineCount':        'NumberofEngines',
+    'AircraftEngineCount':        { 'col': 'NumberofEngines', 'transform': fix_int },
     'AircraftRegistrationNumber': 'RegistrationNumber',
     'AircraftSerialNumber':       { 'literal': None },
     'FlightType':                 'PurposeofFlight',
@@ -107,7 +113,7 @@ dataset_property_mappings = {
     'AircraftEngineModel':        'AircraftEngineModel',
     'AircraftEngineGroupCode':    'EngineGroupCode',
     'AircraftEngineType':         { 'literal': None },
-    'AircraftEngineCount':        'NbrofEngines',
+    'AircraftEngineCount':        { 'col': 'NbrofEngines', 'transform': fix_int },
     'AircraftRegistrationNumber': 'AircraftRegistrationNbr',
     'AircraftSerialNumber':       { 'literal': None },
     'FlightType':                 'PrimaryFlightType',
