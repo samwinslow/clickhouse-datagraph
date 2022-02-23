@@ -3,12 +3,12 @@ CREATE DATABASE IF NOT EXISTS aviation;
 CREATE TABLE aviation.accidents_incidents_all
 (
   `EventId` String,
-  `EventDate` Nullable(Date),
+  `EventDate` Nullable(Date32),
   `EventType` String,
   `SourceDataset` String,
   `AgencyReportNumber` String,
   `AgencyReportType` String,
-  `AgencyReportDate` Nullable(Date),
+  `AgencyReportDate` Nullable(Date32),
   `City` Nullable(String),
   `StateCode` Nullable(String),
   `Country` Nullable(String),
