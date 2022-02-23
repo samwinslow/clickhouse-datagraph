@@ -9,6 +9,7 @@ base_dir = 'datasets/aviation'
 
 city_regex = r'([\w\s]+),'
 state_abbreviations = ['AL', 'AK', 'AZ', 'AR', 'CA', 'CO', 'CT', 'DE', 'FL', 'GA', 'HI', 'ID', 'IL', 'IN', 'IA', 'KS', 'KY', 'LA', 'ME', 'MD', 'MA', 'MI', 'MN', 'MS', 'MO', 'MT', 'NE', 'NV', 'NH', 'NJ', 'NM', 'NY', 'NC', 'ND', 'OH', 'OK', 'OR', 'PA', 'RI', 'SC', 'SD', 'TN', 'TX', 'UT', 'VT', 'VA', 'WA', 'WV', 'WI', 'WY']
+airline_fatality_regex = r'Fatal\((\d+)\)'
 
 
 def get_city(location=''):
@@ -34,6 +35,33 @@ def fix_int(floating_int):
   return int(value)
 
 
+def airline_accidents_get_severity(severity_raw=''):
+  match = re.match(airline_fatality_regex, severity_raw)
+  if match:
+    return 'Fatal'
+  else:
+    return severity_raw
+
+
+# Transform function that operates as a row-wise selector.
+def airline_accidents_get_fatal_count(row):
+  fatal_count_given = row['TotalFatalInjuries']
+  severity_given = row['InjurySeverity']
+  fatal_count = fix_int(fatal_count_given)
+  severity = airline_accidents_get_severity(severity_given)
+  row['InjuryFatalCount'] = fatal_count
+  row['InjurySeverity'] = severity
+
+  if not fatal_count:
+    if severity == 'Fatal':
+      match = re.match(airline_fatality_regex, severity_given)
+      if match:
+        count = int(match.groups()[0])
+        row['InjuryFatalCount'] = count
+  
+  return row
+
+
 # Output columns (keys) are mapped from source columns (values).
 #
 # 'SourceColumn' == { 'col': 'SourceColumn' }
@@ -57,7 +85,7 @@ dataset_property_mappings = {
     'AirportCode':                'AirportCode',
     'AirportName':                'AirportName',
     'InjurySeverity':             'InjurySeverity',
-    'InjuryFatalCount':           { 'col': 'TotalFatalInjuries', 'transform': fix_int },
+    'InjuryFatalCount':           { 'row': True, 'transform': airline_accidents_get_fatal_count },
     'InjurySeriousCount':         { 'col': 'TotalSeriousInjuries', 'transform': fix_int },
     'InjuryMinorCount':           { 'col': 'TotalMinorInjuries', 'transform': fix_int },
     'InjuryUninjuredCount':       { 'col': 'TotalUninjured', 'transform': fix_int },
@@ -212,6 +240,10 @@ dataset_property_mappings = {
 }
 
 
+def has_callable_transform(input_source):
+  return 'transform' in input_source and callable(input_source['transform'])
+
+
 for filename in dataset_property_mappings:
   source_mapping = dataset_property_mappings[filename]
   source_path = '/'.join([base_dir, 'cleaned', filename])
@@ -229,8 +261,13 @@ for filename in dataset_property_mappings:
     elif 'col' in input_source:
       input_col = source_df[input_source['col']]
       input_col_transformed = input_col
-      if 'transform' in input_source and callable(input_source['transform']):
+      if has_callable_transform(input_source):
         input_col_transformed = input_col.apply(input_source['transform'])
       output_df[col] = input_col_transformed
+    elif 'row' in input_source:
+      if not has_callable_transform(input_source):
+        raise Exception('A transform function must be specified when using `row`.')
+      transform = input_source['transform']
+      output_df[col] = source_df.apply(transform, axis='columns')[col]
 
   output_df.to_csv(output_path, index=False)
