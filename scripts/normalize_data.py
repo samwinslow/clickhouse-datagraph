@@ -7,19 +7,8 @@ from utils import read_dataset
 
 base_dir = 'datasets/aviation'
 
-city_regex = r'([\w\s]+),'
 state_abbreviations = ['AL', 'AK', 'AZ', 'AR', 'CA', 'CO', 'CT', 'DE', 'FL', 'GA', 'HI', 'ID', 'IL', 'IN', 'IA', 'KS', 'KY', 'LA', 'ME', 'MD', 'MA', 'MI', 'MN', 'MS', 'MO', 'MT', 'NE', 'NV', 'NH', 'NJ', 'NM', 'NY', 'NC', 'ND', 'OH', 'OK', 'OR', 'PA', 'RI', 'SC', 'SD', 'TN', 'TX', 'UT', 'VT', 'VA', 'WA', 'WV', 'WI', 'WY']
 airline_fatality_regex = r'Fatal\((\d+)\)'
-
-
-def get_city(location=''):
-  if (type(location) != str):
-    return None
-  match = re.match(city_regex, location)
-  if match:
-    return match.groups()[0]
-  else:
-    return location
 
 
 def get_state(location=''):
@@ -43,6 +32,21 @@ def airline_accidents_get_severity(severity_raw=''):
     return severity_raw
 
 
+# Transform function generator that returns regex group match.
+def regex_matcher(regex, default_none=False):
+  if (not regex):
+    raise Exception('Regex supplied to generator missing or invalid')
+  def built_function(haystack=''):
+    if (type(haystack) != str):
+      return None
+    match = re.search(regex, haystack)
+    if match:
+      return match.groups()[0]
+    else:
+      return None if default_none else haystack
+  return built_function
+
+
 # Transform function that operates as a row-wise selector.
 def airline_accidents_get_fatal_count(row):
   fatal_count_given = row['TotalFatalInjuries']
@@ -62,11 +66,61 @@ def airline_accidents_get_fatal_count(row):
   return row
 
 
+def waas_get_fatal_count(row) -> int:
+  crew = fix_int(row['CrewFatalities'])
+  pax = fix_int(row['PAXFatalities'])
+  total = crew + pax
+  return fix_int(total)
+
+
+def waas_get_injured_count(row) -> int:
+  crew = fix_int(row['CrewInjured'])
+  pax = fix_int(row['PAXInjuries'])
+  total = crew + pax
+  return fix_int(total)
+
+
+def waas_get_aboard_count(row) -> int:
+  crew = fix_int(row['CrewAboard'])
+  pax = fix_int(row['PAXAboard'])
+  total = crew + pax
+  return fix_int(total)
+
+
+def waas_get_uninjured_count(row) -> int:
+  aboard = waas_get_aboard_count(row)
+  fatal = waas_get_fatal_count(row)
+  injured = waas_get_injured_count(row)
+  total = aboard - (fatal + injured)
+  return fix_int(max(total, 0))
+
+
+def waas_get_fatal(row):
+  row['InjuryFatalCount'] = waas_get_fatal_count(row)
+  return row
+
+
+def waas_get_injured(row):
+  row['InjurySeriousCount'] = waas_get_injured_count(row)
+  return row
+
+
+def waas_get_uninjured(row):
+  row['InjuryUninjuredCount'] = waas_get_uninjured_count(row)
+  return row
+
+
 # Output columns (keys) are mapped from source columns (values).
 #
 # 'SourceColumn' == { 'col': 'SourceColumn' }
 # Optionally, pass a transform function that will be applied to each element in `col`
 # You can also pass a `literal` value that will be inserted down the whole column
+
+get_city = regex_matcher(r'([^,]+),')
+waas_get_acft_make = regex_matcher(r'^([\w\d]+)\s', True)
+waas_get_acft_model = regex_matcher(r'^[\w\d]+\s([\w\d\-\.]+)')
+waas_get_acft_series = regex_matcher(r'(\d)+$', True) # Note: only supports numerical series, e.g. 737-800
+waas_get_country = regex_matcher(r'([A-Z]{2})$')
 
 dataset_property_mappings = {
   'airline_accidents.csv': {
@@ -204,21 +258,21 @@ dataset_property_mappings = {
     'AgencyReportType':           { 'literal': 'WAAS' },
     'AgencyReportDate':           { 'literal': None },
     'City':                       { 'literal': None },
-    'StateCode':                  None, #TODO
-    'Country':                    None, #TODO
+    'StateCode':                  { 'literal': None },
+    'Country':                    { 'col': 'EventLocation', 'transform': waas_get_country },
     'Latitude':                   { 'literal': None },
     'Longitude':                  { 'literal': None },
     'AirportCode':                { 'literal': None },
-    'AirportName':                None, #TODO
+    'AirportName':                { 'literal': None },
     'InjurySeverity':             { 'literal': None },
-    'InjuryFatalCount':           None, #TODO
-    'InjurySeriousCount':         None, #TODO
+    'InjuryFatalCount':           { 'row': True, 'transform': waas_get_fatal },
+    'InjurySeriousCount':         { 'row': True, 'transform': waas_get_injured },
     'InjuryMinorCount':           { 'literal': None },
-    'InjuryUninjuredCount':       None, #TODO
+    'InjuryUninjuredCount':       { 'row': True, 'transform': waas_get_uninjured },
     'AircraftDamageSeverity':     { 'literal': None },
-    'AircraftMake':               None, #TODO
-    'AircraftModel':              None, #TODO
-    'AircraftSeries':             None, #TODO
+    'AircraftMake':               { 'col': 'Aircraft', 'transform': waas_get_acft_make },
+    'AircraftModel':              { 'col': 'Aircraft', 'transform': waas_get_acft_model },
+    'AircraftSeries':             { 'col': 'Aircraft', 'transform': waas_get_acft_series },
     'AircraftAmateurBuilt':       { 'literal': None },
     'AircraftOperator':           'AircraftOperator',
     'AircraftEngineMake':         { 'literal': None },
