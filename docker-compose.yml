@@ -8,6 +8,7 @@ services:
     volumes:
       - ./db:/var/lib/clickhouse
       - ./datasets:/home/ch/datasets
+      - ./clickhouse/users.xml:/etc/clickhouse-server/users.xml
     networks:
       - ch_network
   ch_client:
